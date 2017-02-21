@@ -1,6 +1,7 @@
 package core;
 
 import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.vector.Vector3f;
 
 import core.entities.*;
@@ -14,8 +15,8 @@ import core.textures.ModelTexture;
 public class Main {
 	
 	public static void main(String[] args) {
+		System.out.println(GL11.glGetString(GL11.GL_VERSION));
 		DisplayManager.createDisplay();
-		
 		Loader loader = new Loader();
 		StaticShader shader = new StaticShader();
 		Renderer renderer = new Renderer(shader);
