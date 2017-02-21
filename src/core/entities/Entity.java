@@ -1,7 +1,10 @@
 package core.entities;
 
+import java.util.Random;
+
 import org.lwjgl.util.vector.Vector3f;
 
+import core.masters.ParticleSystem;
 import core.models.TexturedModel;
 
 public class Entity {
@@ -12,6 +15,11 @@ public class Entity {
 	private float scale;
 	
 	private int textureIndex = 0;
+	protected boolean usesParticles = false;
+	
+	protected static Random random = new Random();
+	
+	public static ParticleSystem system;
 
 	public Entity(TexturedModel model, Vector3f position, float rotX, float rotY, float rotZ,
 			float scale) {
@@ -32,6 +40,10 @@ public class Entity {
 		this.rotY = rotY;
 		this.rotZ = rotZ;
 		this.scale = scale;
+	}
+	
+	public boolean isUsesParticles() {
+		return usesParticles;
 	}
 	
 	public float getTextureXOffset(){

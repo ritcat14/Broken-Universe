@@ -14,12 +14,15 @@ import core.entities.Entity;
 import core.entities.Light;
 import core.entities.Player;
 import core.entities.WaterTile;
+import core.entities.world.Tree;
 import core.loaders.Loader;
 import core.loaders.NormalMappedObjLoader;
 import core.loaders.OBJFileLoader;
 import core.loaders.OBJLoader;
 import core.masters.ParticleMaster;
 import core.masters.ParticleSystem;
+import core.masters.PostProcessing;
+import core.modelData.Fbo;
 import core.modelData.WaterFrameBuffers;
 import core.models.TexturedModel;
 import core.renderers.MasterRenderer;
@@ -66,6 +69,7 @@ public class World {
 	
 	private void init() {
 		entities.add(player);
+		
 		// *********TERRAIN TEXTURE STUFF**********
 		
 		TerrainTexture backgroundTexture = new TerrainTexture(loader.loadTexture("grassy2"));
@@ -145,8 +149,7 @@ public class World {
 
 				} else {
 					float y = terrain.getHeightOfTerrain(x, z);
-					entities.add(new Entity(bobble, 1, new Vector3f(x, y, z), 0,
-							random.nextFloat() * 360, 0, random.nextFloat() * 0.6f + 0.8f));
+					entities.add(new Tree(loader, bobble, new Vector3f(x, y, z), random.nextFloat() * 0.6f + 0.8f));
 				}
 			}
 		}
@@ -154,16 +157,14 @@ public class World {
 
 		picker = new MousePicker(camera, renderer.getProjectionMatrix(), terrain);
 		
-		ParticleTexture particleTexture = new ParticleTexture(loader.loadTexture("fire"), 8, false);
-		
-		system = new ParticleSystem(particleTexture, 50, 25, 0.3f, 4, 1);
+		system = new ParticleSystem(new ParticleTexture(loader.loadTexture("fire"), 8, false), 50, 25, 0.3f, 4, 1);
 		system.randomizeRotation();
 		system.setDirection(new Vector3f(0, 1, 0), 0.1f);
 		system.setLifeError(0.1f);
 		system.setSpeedError(0.4f);
 		system.setScaleError(0.8f);
 
-		sun = new Light(new Vector3f(10000, 10000, -10000), new Vector3f(1.3f, 1.3f, 1.3f));
+		sun = new Light(new Vector3f(1000000, 1500000, -1000000), new Vector3f(1.3f, 1.3f, 1.3f));
 		lights.add(sun);
 		
 		//**********Water Renderer Set-up************************
@@ -175,12 +176,21 @@ public class World {
 		waters.add(water);
 	}
 	
-	public void update() {
+	public void update(Fbo fbo, Fbo outputFbo) {
 		player.move(terrain);
 		camera.move();
 		picker.update();
 		
-		system.generateParticles(player.getPosition());
+		renderer.renderShadowMap(entities, sun);
+		
+		for (Entity e : entities) {
+			if (e.isUsesParticles()) {
+				Vector3f position = e.getPosition();
+				position = new Vector3f(position.x, position.y  + 10, position.z);
+				Entity.system.generateParticles(position);
+			}
+		}
+		
 		ParticleMaster.update(camera);
 		
 		GL11.glEnable(GL30.GL_CLIP_DISTANCE0);
@@ -201,8 +211,14 @@ public class World {
 		//render to screen
 		GL11.glDisable(GL30.GL_CLIP_DISTANCE0);
 		buffers.unbindCurrentFrameBuffer();	
+		
+		fbo.bindFrameBuffer();
 		renderer.renderScene(entities, normalMapEntities, terrains, lights, camera, new Vector4f(0, -1, 0, 100000));	
 		waterRenderer.render(waters, camera, sun);
+		ParticleMaster.renderParticles(camera);
+		fbo.unbindFrameBuffer();
+		fbo.resolveToFbo(outputFbo);
+		PostProcessing.doPostProcessing(outputFbo.getColourTexture());
 	}
 	
 	public void cleanUp() {

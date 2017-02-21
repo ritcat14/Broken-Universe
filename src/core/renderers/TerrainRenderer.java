@@ -9,6 +9,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import core.masters.ShadowBox;
 import core.models.RawModel;
 import core.shaders.TerrainShader;
 import core.terrains.Terrain;
@@ -24,11 +25,14 @@ public class TerrainRenderer {
 		this.shader = shader;
 		shader.start();
 		shader.loadProjectionMatrix(projectionMatrix);
+		shader.loadShadowDistance(ShadowBox.SHADOW_DISTANCE);
+		shader.loadMapSize(ShadowMapMasterRenderer.SHADOW_MAP_SIZE);
 		shader.connectTextureUnits();
 		shader.stop();
 	}
 
-	public void render(List<Terrain> terrains) {
+	public void render(List<Terrain> terrains, Matrix4f toShadowSpace) {
+		shader.loadToShadowSpaceMatrix(toShadowSpace);
 		for (Terrain terrain : terrains) {
 			prepareTerrain(terrain);
 			loadModelMatrix(terrain);

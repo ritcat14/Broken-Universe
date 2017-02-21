@@ -16,7 +16,7 @@ import core.models.RawModel;
 
 public class OBJFileLoader {
 
-	private static final String RES_LOC = "resources/";
+	private static final String RES_LOC = "res/";
 
 	public static RawModel loadOBJ(String objFileName, Loader loader) {
 		FileReader isr = null;

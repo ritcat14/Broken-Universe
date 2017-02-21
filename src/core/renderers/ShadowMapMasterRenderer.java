@@ -18,7 +18,7 @@ import core.shaders.ShadowShader;
 
 public class ShadowMapMasterRenderer {
 
-	private static final int SHADOW_MAP_SIZE = 2048;
+	public static final int SHADOW_MAP_SIZE = 8192;
 
 	private ShadowFrameBuffer shadowFbo;
 	private ShadowShader shader;
