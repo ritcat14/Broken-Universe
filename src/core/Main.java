@@ -17,6 +17,7 @@ public class Main {
 	public static void main(String[] args) {
 		System.out.println(GL11.glGetString(GL11.GL_VERSION));
 		DisplayManager.createDisplay();
+		System.out.println(GL11.glGetString(GL11.GL_VERSION));
 		Loader loader = new Loader();
 		StaticShader shader = new StaticShader();
 		Renderer renderer = new Renderer(shader);
