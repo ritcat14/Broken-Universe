@@ -20,9 +20,9 @@ public class Main {
 		StaticShader shader = new StaticShader();
 		Renderer renderer = new Renderer(shader);
 		
-		RawModel model = OBJLoader.loadObjModel("stall", loader);
+		RawModel model = OBJLoader.loadObjModel("dragon", loader);
 		
-		TexturedModel texturedModel = new TexturedModel(model, new ModelTexture(loader.loadTexture("stallTexture")));
+		TexturedModel texturedModel = new TexturedModel(model, new ModelTexture(loader.loadTexture("dragon")));
 		
 		Entity entity = new Entity(texturedModel, new Vector3f(-1,0,0),0,0,0,1);
 		
