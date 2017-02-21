@@ -1,14 +1,9 @@
 package engineTester;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import models.RawModel;
-import models.TexturedModel;
-import normalMappingObjConverter.NormalMappedObjLoader;
-import objConverter.ModelData;
-import objConverter.OBJFileLoader;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
@@ -17,25 +12,30 @@ import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-import renderEngine.DisplayManager;
-import renderEngine.Loader;
-import renderEngine.MasterRenderer;
-import renderEngine.OBJLoader;
+import entities.*;
+import fontMeshCreator.FontType;
+import fontMeshCreator.GUIText;
+import loaders.Loader;
+import loaders.NormalMappedObjLoader;
+import loaders.OBJFileLoader;
+import loaders.OBJLoader;
+import masters.ParticleMaster;
+import masters.ParticleSystem;
+import masters.TextMaster;
+import modelData.WaterFrameBuffers;
+import models.RawModel;
+import models.TexturedModel;
+import renderers.GuiRenderer;
+import renderers.MasterRenderer;
+import renderers.WaterRenderer;
+import shaders.WaterShader;
 import terrains.Terrain;
+import textures.GuiTexture;
 import textures.ModelTexture;
+import textures.ParticleTexture;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
 import toolbox.MousePicker;
-import water.WaterFrameBuffers;
-import water.WaterRenderer;
-import water.WaterShader;
-import water.WaterTile;
-import entities.Camera;
-import entities.Entity;
-import entities.Light;
-import entities.Player;
-import guis.GuiRenderer;
-import guis.GuiTexture;
 
 public class Main {
 
@@ -43,6 +43,13 @@ public class Main {
 
 		DisplayManager.createDisplay();
 		Loader loader = new Loader();
+		TextMaster.init(loader);
+		MasterRenderer renderer = new MasterRenderer(loader);
+		ParticleMaster.init(loader, renderer.getProjectionMatrix());
+		
+		FontType font = new FontType(loader.loadTexture("candara"), new File("resources/candara.fnt"));
+		GUIText text = new GUIText("Broken Universe", 3f, font, new Vector2f(0f, 0f), 1f, true);
+		text.setColour(0, 0, 0);
 
 		// *********TERRAIN TEXTURE STUFF**********
 		
@@ -106,13 +113,6 @@ public class Main {
 		
 		//************ENTITIES*******************
 		
-		Entity entity = new Entity(barrelModel, new Vector3f(75, 10, -75), 0, 0, 0, 1f);
-		Entity entity2 = new Entity(boulderModel, new Vector3f(85, 10, -75), 0, 0, 0, 1f);
-		Entity entity3 = new Entity(crateModel, new Vector3f(65, 10, -75), 0, 0, 0, 0.04f);
-		normalMapEntities.add(entity);
-		normalMapEntities.add(entity2);
-		normalMapEntities.add(entity3);
-		
 		Random random = new Random(5666778);
 		for (int i = 0; i < 60; i++) {
 			if (i % 3 == 0) {
@@ -147,8 +147,6 @@ public class Main {
 		Light sun = new Light(new Vector3f(10000, 10000, -10000), new Vector3f(1.3f, 1.3f, 1.3f));
 		lights.add(sun);
 
-		MasterRenderer renderer = new MasterRenderer(loader);
-
 		RawModel bunnyModel = OBJLoader.loadObjModel("person", loader);
 		TexturedModel stanfordBunny = new TexturedModel(bunnyModel, new ModelTexture(
 				loader.loadTexture("playerTexture")));
@@ -169,15 +167,26 @@ public class Main {
 		WaterTile water = new WaterTile(75, -75, 0);
 		waters.add(water);
 		
+		ParticleTexture particleTexture = new ParticleTexture(loader.loadTexture("fire"), 8, false);
+		
+		ParticleSystem system = new ParticleSystem(particleTexture, 50, 25, 0.3f, 4, 1);
+		system.randomizeRotation();
+		system.setDirection(new Vector3f(0, 1, 0), 0.1f);
+		system.setLifeError(0.1f);
+		system.setSpeedError(0.4f);
+		system.setScaleError(0.8f);
+		
 		//****************Game Loop Below*********************
 
 		while (!Display.isCloseRequested()) {
 			player.move(terrain);
 			camera.move();
 			picker.update();
-			entity.increaseRotation(0, 1, 0);
-			entity2.increaseRotation(0, 1, 0);
-			entity3.increaseRotation(0, 1, 0);
+			
+			system.generateParticles(player.getPosition());
+			
+			ParticleMaster.update(camera);
+			
 			GL11.glEnable(GL30.GL_CLIP_DISTANCE0);
 			
 			//render reflection teture
@@ -198,13 +207,19 @@ public class Main {
 			buffers.unbindCurrentFrameBuffer();	
 			renderer.renderScene(entities, normalMapEntities, terrains, lights, camera, new Vector4f(0, -1, 0, 100000));	
 			waterRenderer.render(waters, camera, sun);
+			
+			ParticleMaster.renderParticles(camera);
+			
 			guiRenderer.render(guiTextures);
+			TextMaster.render();
 			
 			DisplayManager.updateDisplay();
 		}
 
 		//*********Clean Up Below**************
 		
+		ParticleMaster.cleanUp();
+		TextMaster.cleanUp();
 		buffers.cleanUp();
 		waterShader.cleanUp();
 		guiRenderer.cleanUp();

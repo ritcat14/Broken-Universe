@@ -3,6 +3,8 @@ package shaders;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.FloatBuffer;
 
 import org.lwjgl.BufferUtils;
@@ -12,6 +14,8 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
+
+import engineTester.Main;
 
 public abstract class ShaderProgram {
 	
@@ -98,14 +102,17 @@ public abstract class ShaderProgram {
 	
 	private static int loadShader(String file, int type){
 		StringBuilder shaderSource = new StringBuilder();
+		file = "/shaders/shader/" + file;
 		try{
-			BufferedReader reader = new BufferedReader(new FileReader(file));
+			InputStream is = Main.class.getResourceAsStream(file);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
 			String line;
 			while((line = reader.readLine())!=null){
 				shaderSource.append(line).append("//\n");
 			}
 			reader.close();
-		}catch(IOException e){
+		}catch(Exception e) {
+			System.err.println("Cannot read file " + file);
 			e.printStackTrace();
 			System.exit(-1);
 		}

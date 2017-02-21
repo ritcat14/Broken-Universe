@@ -6,15 +6,15 @@ import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 import org.lwjgl.util.vector.Vector4f;
 
-import toolbox.Maths;
 import entities.Camera;
 import entities.Light;
+import toolbox.Maths;
 
 public class TerrainShader extends ShaderProgram{
 	
 	private static final int MAX_LIGHTS = 4;
-	private static final String VERTEX_FILE = "src/shaders/terrainVertexShader.txt";
-	private static final String FRAGMENT_FILE = "src/shaders/terrainFragmentShader.txt";
+	private static final String VERTEX_FILE = "terrainVertexShader.txt";
+	private static final String FRAGMENT_FILE = "terrainFragmentShader.txt";
 	
 	private int location_transformationMatrix;
 	private int location_projectionMatrix;

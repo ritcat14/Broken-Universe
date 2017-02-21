@@ -11,7 +11,7 @@ import models.RawModel;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
 
-import renderEngine.Loader;
+import loaders.Loader;
 import textures.TerrainTexture;
 import textures.TerrainTexturePack;
 import toolbox.Maths;
@@ -91,7 +91,7 @@ public class Terrain {
 		
 		BufferedImage image = null;
 		try {
-			image = ImageIO.read(new File("res/" + heightMap + ".png"));
+			image = ImageIO.read(new File("resources/" + heightMap + ".png"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
