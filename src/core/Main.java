@@ -7,6 +7,8 @@ import java.util.Random;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
@@ -43,8 +45,8 @@ import core.toolbox.MousePicker;
 public class Main {
 
 	public static void main(String[] args) {
-
 		DisplayManager.createDisplay();
+		System.out.println(GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
 		Loader loader = new Loader();
 		TextMaster.init(loader);
 		Tree.init(loader);

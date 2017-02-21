@@ -14,7 +14,8 @@ public class SkyboxShader extends ShaderProgram{
     private static final String FRAGMENT_FILE = "skyboxFragmentShader.txt";
     
     private static final float ROTATE_SPEED = 1f;
-     
+
+	private int location_transformationMatrix;
     private int location_projectionMatrix;
     private int location_viewMatrix;
     private int location_fogColour;
@@ -54,9 +55,14 @@ public class SkyboxShader extends ShaderProgram{
     public void loadBlendFactor(float blend){
     	super.loadFloat(location_blendFactor, blend);
     }
+	
+	public void loadTransformationMatrix(Matrix4f matrix){
+		super.loadMatrix(location_transformationMatrix, matrix);
+	}
      
     @Override
     protected void getAllUniformLocations() {
+		location_transformationMatrix = super.getUniformLocation("transformationMatrix");
         location_projectionMatrix = super.getUniformLocation("projectionMatrix");
         location_viewMatrix = super.getUniformLocation("viewMatrix");
         location_fogColour = super.getUniformLocation("fogColour");

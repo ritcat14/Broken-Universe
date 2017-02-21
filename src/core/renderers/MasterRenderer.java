@@ -16,6 +16,7 @@ import core.entities.Entity;
 import core.entities.Light;
 import core.loaders.Loader;
 import core.models.TexturedModel;
+import core.shaders.SkyboxShader;
 import core.shaders.StaticShader;
 import core.shaders.TerrainShader;
 import core.terrains.Terrain;
@@ -26,9 +27,9 @@ public class MasterRenderer {
 	public static final float NEAR_PLANE = 0.1f;
 	public static final float FAR_PLANE = 1000;
 
-	public static final float RED = 0.1f;
+	public static final float RED = 0.4f;
 	public static final float GREEN = 0.4f;
-	public static final float BLUE = 0.2f;
+	public static final float BLUE = 0.4f;
 
 	private Matrix4f projectionMatrix;
 

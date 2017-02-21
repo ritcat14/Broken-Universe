@@ -1,4 +1,4 @@
-#version 150
+#version 140
 
 in vec3 position;
 in vec2 textureCoordinates;
@@ -20,7 +20,7 @@ uniform float useFakeLighting;
 uniform float numberOfRows;
 uniform vec2 offset;
 
-const float density = 0;
+const float density = 0.03;
 const float gradient = 5.0;
 
 uniform vec4 plane;

@@ -1,7 +1,5 @@
 package core.entities.world;
 
-import java.util.Random;
-
 import org.lwjgl.util.vector.Vector3f;
 
 import core.entities.Entity;
