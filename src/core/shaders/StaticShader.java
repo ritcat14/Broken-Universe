@@ -15,7 +15,7 @@ public class StaticShader extends ShaderProgram {
 	private int location_lightColour;
 
 	public StaticShader() {
-		super("src/core/shaders/vertexShader.txt", "src/core/shaders/fragmentShader.txt");
+		super("/core/shaders/vertexShader.txt", "/core/shaders/fragmentShader.txt");
 	}
 
 	@Override
