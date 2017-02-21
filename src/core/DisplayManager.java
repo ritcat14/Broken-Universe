@@ -6,7 +6,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.PixelFormat;
 
 public class DisplayManager {
-	// Test commit
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
 	public static final int FPS = 120;
