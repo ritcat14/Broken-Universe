@@ -1,6 +1,10 @@
 package core.masters;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Map.Entry;
 
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
@@ -9,6 +13,7 @@ import org.lwjgl.util.vector.Vector4f;
 import core.DisplayManager;
 import core.entities.Particle;
 import core.textures.ParticleTexture;
+import core.toolbox.InsertionSort;
 
 public class ParticleSystem {
 
@@ -18,6 +23,8 @@ public class ParticleSystem {
 	private boolean randomRotation = false;
 	private Vector3f direction;
 	private float directionDeviation = 0;
+	private final int MAX_PARTICLES = 500;
+	private int particleNum = 0;
 	
 	private ParticleTexture texture;
 
@@ -32,10 +39,6 @@ public class ParticleSystem {
 		this.averageScale = scale;
 	}
 
-	/**
-	 * @param direction - The average direction in which particles are emitted.
-	 * @param deviation - A value between 0 and 1 indicating how far from the chosen direction particles can deviate.
-	 */
 	public void setDirection(Vector3f direction, float deviation) {
 		this.direction = new Vector3f(direction);
 		this.directionDeviation = (float) (deviation * Math.PI);
@@ -45,44 +48,32 @@ public class ParticleSystem {
 		randomRotation = true;
 	}
 
-	/**
-	 * @param error
-	 *            - A number between 0 and 1, where 0 means no error margin.
-	 */
 	public void setSpeedError(float error) {
 		this.speedError = error * averageSpeed;
 	}
 
-	/**
-	 * @param error
-	 *            - A number between 0 and 1, where 0 means no error margin.
-	 */
 	public void setLifeError(float error) {
 		this.lifeError = error * averageLifeLength;
 	}
 
-	/**
-	 * @param error
-	 *            - A number between 0 and 1, where 0 means no error margin.
-	 */
 	public void setScaleError(float error) {
 		this.scaleError = error * averageScale;
 	}
 
-	public void generateParticles(Vector3f systemCenter) {
+	public void generateParticles(Vector3f systemCenter, boolean collideable) {
 		float delta = DisplayManager.getFrameTimeSeconds();
 		float particlesToCreate = pps * delta;
 		int count = (int) Math.floor(particlesToCreate);
 		float partialParticle = particlesToCreate % 1;
 		for (int i = 0; i < count; i++) {
-			emitParticle(systemCenter);
+			emitParticle(systemCenter, collideable);
 		}
 		if (Math.random() < partialParticle) {
-			emitParticle(systemCenter);
+			emitParticle(systemCenter, collideable);
 		}
 	}
 
-	private void emitParticle(Vector3f center) {
+	private void emitParticle(Vector3f center, boolean collideable) {
 		Vector3f velocity = null;
 		if(direction!=null){
 			velocity = generateRandomUnitVectorWithinCone(direction, directionDeviation);
@@ -93,7 +84,23 @@ public class ParticleSystem {
 		velocity.scale(generateValue(averageSpeed, speedError));
 		float scale = generateValue(averageScale, scaleError);
 		float lifeLength = generateValue(averageLifeLength, lifeError);
-		new Particle(texture, new Vector3f(center), velocity, gravityComplient, lifeLength, generateRotation(), scale);
+		if (particleNum < MAX_PARTICLES) {
+			new Particle(texture, new Vector3f(center), velocity, gravityComplient, lifeLength, generateRotation(), scale, collideable);
+			particleNum++;
+		} else {
+			Map<ParticleTexture, List<Particle>> removedParticles = ParticleMaster.removedParticles;
+			Iterator<Entry<ParticleTexture, List<Particle>>> mapIterator = removedParticles.entrySet().iterator();
+			while(mapIterator.hasNext()) {
+				Entry<ParticleTexture, List<Particle>> entry = mapIterator.next();
+				List<Particle> list = entry.getValue();
+				Iterator<Particle> iterator = list.iterator();
+				while(iterator.hasNext()) {
+					Particle p = iterator.next();
+					if (!p.isAlive()) p.activate(texture, new Vector3f(center), velocity, gravityComplient, lifeLength, generateRotation(), scale, collideable);
+				}
+				if (!entry.getKey().isAdditive()) InsertionSort.sortHighToLow(list);
+			}
+		}
 	}
 
 	private float generateValue(float average, float errorMargin) {

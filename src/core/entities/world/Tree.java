@@ -16,9 +16,9 @@ public class Tree extends Entity {
 	}
 	
 	public static void init(Loader loader) {
-		system = new ParticleSystem(new ParticleTexture(loader.loadTexture("pine"), 1, false), 1, 5, 0.3f, 4, 0.8f);
+		system = new ParticleSystem(new ParticleTexture(loader.loadTexture("pine"), 1, false), 1, 5, 0.3f, 50, 0.8f);
 		system.randomizeRotation();
-		system.setDirection(new Vector3f(0, -1, 0), 0.1f);
+		system.setDirection(new Vector3f(0, -1, 0), 0.5f);
 		system.setLifeError(0.1f);
 		system.setSpeedError(0.4f);
 		system.setScaleError(0.8f);

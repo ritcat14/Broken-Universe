@@ -14,6 +14,8 @@ public class Entity {
 	private float rotX, rotY, rotZ;
 	private float scale;
 	
+	private boolean removed = false;
+	
 	private int textureIndex = 0;
 	protected boolean usesParticles = false;
 	
@@ -40,6 +42,18 @@ public class Entity {
 		this.rotY = rotY;
 		this.rotZ = rotZ;
 		this.scale = scale;
+	}
+	
+	public void remove() {
+		removed = true;
+	}
+	
+	public boolean isRemoved() {
+		return removed;
+	}
+	
+	public void setRemoved(boolean removed) {
+		this.removed = removed;
 	}
 	
 	public boolean isUsesParticles() {

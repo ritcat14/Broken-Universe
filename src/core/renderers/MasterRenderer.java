@@ -27,9 +27,9 @@ public class MasterRenderer {
 	public static final float NEAR_PLANE = 0.1f;
 	public static final float FAR_PLANE = 1000;
 
-	public static final float RED = 0.4f;
-	public static final float GREEN = 0.4f;
-	public static final float BLUE = 0.4f;
+	public static final float RED = 0f;
+	public static final float GREEN = 0f;
+	public static final float BLUE = 0f;
 
 	private Matrix4f projectionMatrix;
 
@@ -62,13 +62,11 @@ public class MasterRenderer {
 		return this.projectionMatrix;
 	}
 
-	public void renderScene(List<Entity> entities, List<Entity> normalEntities, List<Terrain> terrains, List<Light> lights,
+	public void renderScene(List<Entity> entities, List<Entity> normalEntities, Terrain terrain, List<Light> lights,
 			Camera camera, Vector4f clipPlane) {
-		for (Terrain terrain : terrains) {
-			processTerrain(terrain);
-		}
+		processTerrain(terrain);
 		for (Entity entity : entities) {
-			processEntity(entity);
+			if (!entity.isRemoved()) processEntity(entity);
 		}
 		for(Entity entity : normalEntities){
 			processNormalMapEntity(entity);

@@ -19,7 +19,7 @@ uniform float shadowDistance;
 
 uniform mat4 toShadowMapSpace;
 
-const float density = 0.03;
+const float density = 0.0;
 const float gradient = 5.0;
 const float transitionDistance = 10.0;
 

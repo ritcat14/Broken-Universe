@@ -5,6 +5,7 @@ import org.lwjgl.util.vector.Vector3f;
 
 import core.DisplayManager;
 import core.masters.ParticleMaster;
+import core.terrains.Terrain;
 import core.textures.ParticleTexture;
 
 public class Particle {
@@ -26,11 +27,18 @@ public class Particle {
 	private float distance;
 	
 	private boolean alive = false;
+	private boolean collideable = false;
 	
 	private Vector3f reusableChange = new Vector3f();
 
 	public Particle(ParticleTexture texture, Vector3f position, Vector3f velocity, float gravityEffect, float lifeLength, float rotation,
-			float scale) {
+			float scale, boolean collideable) {
+		activate(texture, position, velocity, gravityEffect, lifeLength, rotation, scale, collideable);
+	}
+
+	public void activate(ParticleTexture texture, Vector3f position, Vector3f velocity, float gravityEffect, float lifeLength, float rotation,
+			float scale, boolean collideable) {
+		alive = true;
 		this.texture = texture;
 		this.position = position;
 		this.velocity = velocity;
@@ -38,7 +46,16 @@ public class Particle {
 		this.lifeLength = lifeLength;
 		this.rotation = rotation;
 		this.scale = scale;
-		ParticleMaster.addParticles(this);
+		this.collideable = collideable;
+		ParticleMaster.addParticles(this, ParticleMaster.particles);
+	}
+	
+	public boolean isAlive() {
+		return alive;
+	}
+	
+	public void remove() {
+		alive = false;
 	}
 	
 	public float getDistance() {
@@ -73,13 +90,17 @@ public class Particle {
 		return texOffset2;
 	}
 	
-	public boolean update(Camera camera) {
-		velocity.y += Player.GRAVITY * gravityEffect * DisplayManager.getFrameTimeSeconds();
-		reusableChange.set(velocity);
-		reusableChange.scale(DisplayManager.getFrameTimeSeconds());
-		Vector3f.add(reusableChange, position, position);
-		distance = Vector3f.sub(camera.getPosition(), position, null).lengthSquared();
-		updateTextureCoordInfo();
+	public boolean update(Camera camera, Terrain terrain) {
+		float y = terrain.getHeightOfTerrain(position.x, position.z);
+		if (position.y <= y && collideable) position.y = y;
+		else {
+			velocity.y += Player.GRAVITY * gravityEffect * DisplayManager.getFrameTimeSeconds();
+			reusableChange.set(velocity);
+			reusableChange.scale(DisplayManager.getFrameTimeSeconds());
+			Vector3f.add(reusableChange, position, position);
+			distance = Vector3f.sub(camera.getPosition(), position, null).lengthSquared();
+			updateTextureCoordInfo();
+		}
 		elapsedTime += DisplayManager.getFrameTimeSeconds();
 		return elapsedTime < lifeLength;
 	}

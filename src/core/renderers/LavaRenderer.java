@@ -11,22 +11,24 @@ import org.lwjgl.util.vector.Vector3f;
 
 import core.DisplayManager;
 import core.entities.Camera;
+import core.entities.LavaTile;
 import core.entities.Light;
 import core.entities.WaterTile;
 import core.loaders.Loader;
 import core.modelData.FrameBuffers;
 import core.models.RawModel;
+import core.shaders.LavaShader;
 import core.shaders.WaterShader;
 import core.toolbox.Maths;
 
-public class WaterRenderer {
+public class LavaRenderer {
 	
 	private static final String DUDV_MAP = "waterDUDV";
 	private static final String NORMAL_MAP = "normal";
 	private static final float WAVE_SPEED = 0.03f;
 
 	private RawModel quad;
-	private WaterShader shader;
+	private LavaShader shader;
 	private FrameBuffers fbos;
 	
 	private float moveFactor = 0;
@@ -34,7 +36,7 @@ public class WaterRenderer {
 	private int dudvTexture;
 	private int normalMap;
 
-	public WaterRenderer(Loader loader, WaterShader shader, Matrix4f projectionMatrix, FrameBuffers fbos) {
+	public LavaRenderer(Loader loader, LavaShader shader, Matrix4f projectionMatrix, FrameBuffers fbos) {
 		this.shader = shader;
 		this.fbos = fbos;
 		dudvTexture = loader.loadTexture(DUDV_MAP);
@@ -46,11 +48,11 @@ public class WaterRenderer {
 		setUpVAO(loader);
 	}
 
-	public void render(WaterTile water, Camera camera, Light sun) {
+	public void render(LavaTile lava, Camera camera, Light sun) {
 		prepareRender(camera, sun);	
 			Matrix4f modelMatrix = Maths.createTransformationMatrix(
-					new Vector3f(water.getX(), water.getHeight(), water.getZ()), 0, 0, 0,
-					water.TILE_WIDTH, water.TILE_WIDTH, water.TILE_HEIGHT);
+					new Vector3f(lava.getX(), lava.getHeight(), lava.getZ()), 0, 0, 0,
+					lava.TILE_WIDTH, lava.TILE_WIDTH, lava.TILE_HEIGHT);
 			shader.loadModelMatrix(modelMatrix);
 			GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, quad.getVertexCount());
 		unbind();

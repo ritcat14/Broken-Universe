@@ -1,0 +1,15 @@
+If player isn't in area, load all entities within range of player, otherwise load area data.
+
+Required:
+	area bounds
+	area data
+
+Area Data:
+	list of entities
+		positions
+		rotations
+		transformations
+		states, e.g. open doors, damage etc.
+
+	list of lights
+	list of waters	

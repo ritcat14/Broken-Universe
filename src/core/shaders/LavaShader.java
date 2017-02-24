@@ -8,10 +8,10 @@ import core.entities.Light;
 import core.shaders.ShaderProgram;
 import core.toolbox.Maths;
 
-public class WaterShader extends ShaderProgram {
+public class LavaShader extends ShaderProgram {
 
-	private final static String VERTEX_FILE = "waterVertex.txt";
-	private final static String FRAGMENT_FILE = "waterFragment.txt";
+	private final static String VERTEX_FILE = "lavaVertex.txt";
+	private final static String FRAGMENT_FILE = "lavaFragment.txt";
 
 	private int location_modelMatrix;
 	private int location_viewMatrix;
@@ -27,7 +27,7 @@ public class WaterShader extends ShaderProgram {
 	private int location_depthMap;
 	private int location_skyColour;
 
-	public WaterShader() {
+	public LavaShader() {
 		super(VERTEX_FILE, FRAGMENT_FILE);
 	}
 

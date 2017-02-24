@@ -1,6 +1,6 @@
 package core.entities;
 
-public class WaterTile {
+public class LavaTile {
 	
 	public final float TILE_WIDTH;
 	public final float TILE_HEIGHT;
@@ -8,7 +8,7 @@ public class WaterTile {
 	private float height;
 	private float x,z;
 	
-	public WaterTile(float WIDTH, float HEIGHT, float centerX, float centerZ, float height) {
+	public LavaTile(float WIDTH, float HEIGHT, float centerX, float centerZ, float height) {
 		this.TILE_WIDTH = WIDTH;
 		this.TILE_HEIGHT = HEIGHT;
 		this.x = centerX;

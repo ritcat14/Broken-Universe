@@ -1,5 +1,6 @@
 package core;
 
+import java.awt.Toolkit;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import core.masters.ParticleSystem;
 import core.masters.PostProcessing;
 import core.masters.TextMaster;
 import core.modelData.Fbo;
-import core.modelData.WaterFrameBuffers;
+import core.modelData.FrameBuffers;
 import core.models.RawModel;
 import core.models.TexturedModel;
 import core.renderers.GuiRenderer;
@@ -57,7 +58,7 @@ public class Main {
 		TexturedModel stanfordBunny = new TexturedModel(bunnyModel, new ModelTexture(
 				loader.loadTexture("playerTexture")));
 
-		Player player = new Player(stanfordBunny, new Vector3f(75, 5, -75), 0, 100, 0, 0.6f);
+		Player player = new Player(stanfordBunny, new Vector3f(0, 0, 0), 0, 0, 0, 0.6f);
 		Camera camera = new Camera(player);
 		
 		MasterRenderer renderer = new MasterRenderer(loader, camera);
@@ -69,11 +70,6 @@ public class Main {
 		World world = new World(loader, renderer, camera, player);
 		
 		
-		List<GuiTexture> guiTextures = new ArrayList<GuiTexture>();
-		GuiRenderer guiRenderer = new GuiRenderer(loader);
-		//GuiTexture shadowMap = new GuiTexture(renderer.getShadowMapTexture(), new Vector2f(0.5f, 0.5f), new Vector2f(0.5f, 0.5f));
-		//guiTextures.add(shadowMap);
-		
 		Fbo multisampleFbo = new Fbo(Display.getWidth(), Display.getHeight());
 		Fbo outputFbo = new Fbo(Display.getWidth(), Display.getHeight(), Fbo.DEPTH_TEXTURE);
 		PostProcessing.init(loader);
@@ -83,7 +79,6 @@ public class Main {
 		while (!Display.isCloseRequested()) {
 			world.update(multisampleFbo, outputFbo);
 			
-			guiRenderer.render(guiTextures);
 			TextMaster.render();
 			
 			DisplayManager.updateDisplay();
@@ -95,9 +90,7 @@ public class Main {
 		multisampleFbo.cleanUp();
 		ParticleMaster.cleanUp();
 		TextMaster.cleanUp();
-		guiRenderer.cleanUp();
 		DisplayManager.closeDisplay();
-
 	}
 
 

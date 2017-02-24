@@ -13,19 +13,21 @@ import core.entities.Camera;
 import core.entities.Particle;
 import core.loaders.Loader;
 import core.renderers.ParticleRenderer;
+import core.terrains.Terrain;
 import core.textures.ParticleTexture;
 import core.toolbox.InsertionSort;
 
 public class ParticleMaster {
 	
-	private static Map<ParticleTexture, List<Particle>> particles = new HashMap<ParticleTexture, List<Particle>>();
+	public static Map<ParticleTexture, List<Particle>> particles = new HashMap<ParticleTexture, List<Particle>>();
 	private static ParticleRenderer renderer;
+	public static Map<ParticleTexture, List<Particle>> removedParticles = new HashMap<ParticleTexture, List<Particle>>();
 	
 	public static void init(Loader loader, Matrix4f projectionMatrix) {
 		renderer = new ParticleRenderer(loader, projectionMatrix);
 	}
 	
-	public static void update(Camera camera) {
+	public static void update(Camera camera, Terrain terrain) {
 		Iterator<Entry<ParticleTexture, List<Particle>>> mapIterator = particles.entrySet().iterator();
 		while(mapIterator.hasNext()) {
 			Entry<ParticleTexture, List<Particle>> entry = mapIterator.next();
@@ -33,8 +35,10 @@ public class ParticleMaster {
 			Iterator<Particle> iterator = list.iterator();
 			while(iterator.hasNext()) {
 				Particle p = iterator.next();
-				boolean stillAlive = p.update(camera);
+				boolean stillAlive = p.update(camera, terrain);
 				if (!stillAlive) {
+					p.remove();
+					addParticles(p, removedParticles);
 					iterator.remove();
 					if (list.isEmpty()) {
 						mapIterator.remove();
@@ -53,11 +57,11 @@ public class ParticleMaster {
 		renderer.cleanUp();
 	}
 	
-	public static void addParticles(Particle particle) {
-		List<Particle> list = particles.get(particle.getTexture());
+	public static void addParticles(Particle particle, Map<ParticleTexture, List<Particle>> map) {
+		List<Particle> list = map.get(particle.getTexture());
 		if (list == null) {
 			list = new ArrayList<Particle>();
-			particles.put(particle.getTexture(), list);
+			map.put(particle.getTexture(), list);
 		}
 		list.add(particle);
 	}
