@@ -1,11 +1,6 @@
 package core;
 
 import java.awt.Toolkit;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -38,10 +33,14 @@ import core.textures.GuiTexture;
 import core.textures.ModelTexture;
 import core.textures.TerrainTexture;
 import core.textures.TerrainTexturePack;
+import core.toolbox.FileLoader;
 
 public class World {
 
 	public final static int WORLD_SIZE = 4096;
+	
+	public FileLoader fileLoader;
+	public boolean saved = false;
 	
 	private GuiRenderer guiRenderer;
 	private GuiTexture playerMarker, miniMap;
@@ -73,6 +72,7 @@ public class World {
 		this.player = player;
 		this.renderer = renderer;
 		this.camera = camera;
+		fileLoader = new FileLoader();
 		init();
 	}
 	
@@ -99,7 +99,6 @@ public class World {
 		water = new WaterTile(WORLD_SIZE, WORLD_SIZE, WORLD_SIZE/2, WORLD_SIZE/2, -25);
 
 		sun = new Light(new Vector3f(1000000, 1500000, -1000000), new Vector3f(1.3f, 1.3f, 1.3f));
-		lights.add(sun);
 		
 		guiRenderer = new GuiRenderer(loader);
 		
@@ -110,17 +109,19 @@ public class World {
 		size = getScaledVector(0.004f);
 		playerMarker = new GuiTexture(loader.loadTexture("playerMarker"), new Vector2f(0, 0), size);
 		guiTextures.add(playerMarker);
-		
+
+		entitiesToRender.add(player);
+		lightsToRender.add(sun);
 		generate();
+		//fileLoader.readData("sector.sec");
 	}
 	
 	private void loadData() {
 		String file = "sector.sec";
-		BufferedReader reader = null;
-		String line ="";
+		fileLoader.readData(file);
+		String[] fileData = fileLoader.getData();
 		try {
-			reader = new BufferedReader(new FileReader(file));
-			while ((line = reader.readLine())!=null) {
+			for (String line : fileData) {
 				String[] parts;
 				if (line.startsWith("E:") || line.startsWith("NE:")) {
 					parts = line.split(":");
@@ -165,11 +166,8 @@ public class World {
 					
 				}
 			}
-			reader.close();
-		} catch (FileNotFoundException e) {
-			generate();
 		} catch (Exception e) {
-			e.printStackTrace();
+			generate();
 		}
 	}
 	
@@ -186,7 +184,7 @@ public class World {
 		
 		Random random = new Random(5666778);
 		float waterHeight = water.getHeight();
-		for (int i = 0; i < WORLD_SIZE/8; i++) {
+		for (int i = 0; i < WORLD_SIZE; i++) {
 			if (i % 3 == 0) {
 				float x = (random.nextFloat() * WORLD_SIZE);
 				float z = (random.nextFloat() * WORLD_SIZE);
@@ -210,44 +208,43 @@ public class World {
 				}
 			}
 		}
-		save(entities, normalMapEntities, lights);
 	}
 	
-	public void save(List<Entity> entities, List<Entity> normalEntities, List<Light> lights) {
-		String file = "sector.sec";
-		lights.remove(sun);
-		entities.remove(player);
-		try {
-			PrintWriter writer = new PrintWriter(new File(file));
-			for (Entity e : entities) {
-				writer.println("E:" + e.getData());
-			}
-			for (Entity e : normalEntities) {
-				writer.println("NE:" + e.getData());
-			}
-			for (Light l : lights) {
-				writer.println("L:" + l.getData());
-			}
-			writer.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+	public void save() {
+		String[] data = new String[entities.size() + normalMapEntities.size() + lights.size()];
+		int index = 0;
+		for (Entity e : entities) {
+			data[index] = "E:" + e.getData();
+			index++;
 		}
-		lights.add(sun);
-		entities.add(player);
+		for (Entity e : normalMapEntities) {
+			data[index] = "NE:" + e.getData();
+			index++;
+		}
+		for (Light l : lights) {
+			data[index] = l.getData();
+			index++;
+		}
+		fileLoader.writeData("sector.sec", data);
 	}
 	
 	public void update(Fbo fbo, Fbo outputFbo) {
+		if (fileLoader.isDataRead()) {
+			loadData();
+		}
+		
+		player.move(this);
+		camera.move();
+		
 		float xPercent = ((player.getPosition().x / WORLD_SIZE) * 100);
 		float zPercent = ((player.getPosition().z / WORLD_SIZE) * 100);
 		xPercent = (miniMap.getScale().x / 100) * xPercent * 2;
 		zPercent = (miniMap.getScale().y / 100) * zPercent * 2;
 		playerMarker.setPosition(new Vector2f(xPercent-1, 1-zPercent));
 		
-		player.move(this);
-		camera.move();
-		
 		renderer.renderShadowMap(entities, sun);
 		for (Entity e : entities) {
+			if (e instanceof Player) continue;
 			boolean inBounds = false;
 			int boundaries = 500;
 			int x0 = (int) (player.getPosition().x - boundaries);
@@ -287,14 +284,14 @@ public class World {
 		
 		//render refraction texture
 		buffers.bindRefractionFrameBuffer();
-		renderer.renderScene(entities, normalMapEntities, terrain, lights, camera, new Vector4f(0, -1, 0, water.getHeight()));
+		renderer.renderScene(entitiesToRender, normalMapEntitiesToRender, terrain, lightsToRender, camera, new Vector4f(0, -1, 0, water.getHeight()));
 		
 		//render to screen
 		GL11.glDisable(GL30.GL_CLIP_DISTANCE0);
 		buffers.unbindCurrentFrameBuffer();	
 		
 		fbo.bindFrameBuffer();
-		renderer.renderScene(entities, normalMapEntities, terrain, lights, camera, new Vector4f(0, -1, 0, 100000));	
+		renderer.renderScene(entitiesToRender, normalMapEntitiesToRender, terrain, lightsToRender, camera, new Vector4f(0, -1, 0, 100000));	
 		waterRenderer.render(water, camera, sun);
 		ParticleMaster.renderParticles(camera);
 		fbo.unbindFrameBuffer();

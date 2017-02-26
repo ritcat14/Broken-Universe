@@ -63,6 +63,10 @@ public class Main {
 			
 			DisplayManager.updateDisplay();
 		}
+		
+		//**************Save*******************
+		world.save();
+		while(!world.saved) world.saved = world.fileLoader.isDataWritten();
 
 		//*********Clean Up Below**************
 		

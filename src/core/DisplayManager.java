@@ -53,6 +53,7 @@ public class DisplayManager {
 	
 	public static void closeDisplay(){
 		Display.destroy();
+		System.exit(-1);
 	}
 	
 	private static long getCurrentTime(){
