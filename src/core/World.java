@@ -1,7 +1,11 @@
 package core;
 
 import java.awt.Toolkit;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -14,53 +18,48 @@ import org.lwjgl.util.vector.Vector4f;
 
 import core.entities.Camera;
 import core.entities.Entity;
-import core.entities.LavaTile;
 import core.entities.Light;
 import core.entities.Player;
 import core.entities.WaterTile;
 import core.entities.world.Tree;
-import core.fontMeshCreator.FontType;
-import core.fontMeshCreator.GUIText;
 import core.loaders.Loader;
-import core.loaders.NormalMappedObjLoader;
 import core.loaders.OBJFileLoader;
-import core.loaders.OBJLoader;
 import core.masters.ParticleMaster;
-import core.masters.ParticleSystem;
 import core.masters.PostProcessing;
 import core.modelData.Fbo;
 import core.modelData.FrameBuffers;
 import core.models.TexturedModel;
 import core.renderers.GuiRenderer;
-import core.renderers.LavaRenderer;
 import core.renderers.MasterRenderer;
 import core.renderers.WaterRenderer;
-import core.shaders.LavaShader;
 import core.shaders.WaterShader;
 import core.terrains.Terrain;
 import core.textures.GuiTexture;
 import core.textures.ModelTexture;
-import core.textures.ParticleTexture;
 import core.textures.TerrainTexture;
 import core.textures.TerrainTexturePack;
-import core.toolbox.MousePicker;
 
 public class World {
 
 	public final static int WORLD_SIZE = 4096;
 	
-	private GUIText text;
-	private FontType font;
 	private GuiRenderer guiRenderer;
 	private GuiTexture playerMarker, miniMap;
 	
 	private List<GuiTexture> guiTextures = new ArrayList<GuiTexture>();
+	private List<Entity> entities = new ArrayList<Entity>();
+	private List<Entity> normalMapEntities = new ArrayList<Entity>();
+	private List<Light> lights = new ArrayList<Light>();
 	
-	public static Terrain terrain;
+	private List<Entity> entitiesToRender = new ArrayList<Entity>();
+	private List<Entity> normalMapEntitiesToRender = new ArrayList<Entity>();
+	private List<Light> lightsToRender = new ArrayList<Light>();
 	
-	public static WaterTile water;
-	protected WaterRenderer waterRenderer;
-	protected WaterShader waterShader;
+	private Terrain terrain;
+	
+	private WaterTile water;
+	private WaterRenderer waterRenderer;
+	private WaterShader waterShader;
 	
 	private Loader loader;
 	private Player player;
@@ -68,7 +67,6 @@ public class World {
 	private MasterRenderer renderer;
 	private FrameBuffers buffers;
 	private Light sun;
-	private SectorManager manager;
 	
 	public World(Loader loader, MasterRenderer renderer, Camera camera, Player player) {
 		this.loader = loader;
@@ -101,13 +99,7 @@ public class World {
 		water = new WaterTile(WORLD_SIZE, WORLD_SIZE, WORLD_SIZE/2, WORLD_SIZE/2, -25);
 
 		sun = new Light(new Vector3f(1000000, 1500000, -1000000), new Vector3f(1.3f, 1.3f, 1.3f));
-		
-		manager = new SectorManager(player, sun, loader);
-		//manager.changeSector(manager.getSector(player.getPosition().x, player.getPosition().z).getID());
-
-		font = new FontType(loader.loadTexture("candara"), new File("res/candara.fnt"));
-		text = new GUIText("Sector: " + manager.getCurrSector().getID(), 1f, font, new Vector2f(0f, 0f), 1f, false);
-		text.setColour(0, 0, 0);
+		lights.add(sun);
 		
 		guiRenderer = new GuiRenderer(loader);
 		
@@ -118,17 +110,133 @@ public class World {
 		size = getScaledVector(0.004f);
 		playerMarker = new GuiTexture(loader.loadTexture("playerMarker"), new Vector2f(0, 0), size);
 		guiTextures.add(playerMarker);
+		
+		generate();
+	}
+	
+	private void loadData() {
+		String file = "sector.sec";
+		BufferedReader reader = null;
+		String line ="";
+		try {
+			reader = new BufferedReader(new FileReader(file));
+			while ((line = reader.readLine())!=null) {
+				String[] parts;
+				if (line.startsWith("E:") || line.startsWith("NE:")) {
+					parts = line.split(":");
+					String[] data = parts[1].split(",");
+					Vector3f position = new Vector3f(Float.parseFloat(data[0]), Float.parseFloat(data[1]), Float.parseFloat(data[2]));
+					float rotX = Float.parseFloat(data[3]);
+					float rotY = Float.parseFloat(data[4]);
+					float rotZ = Float.parseFloat(data[5]);
+					float scale = Float.parseFloat(data[6]);
+					boolean removed = Boolean.parseBoolean(data[7]);
+					int textureIndex = Integer.parseInt(data[8]);
+					boolean usesParticles = Boolean.parseBoolean(data[9]);
+					
+					data = parts[2].split(",");
+					float shineDamper = Float.parseFloat(data[0]);
+					float reflectivity = Float.parseFloat(data[1]);
+					boolean hasTransparency = Boolean.parseBoolean(data[2]);
+					boolean useFakeLighting = Boolean.parseBoolean(data[3]);
+					int numberOfRows = Integer.parseInt(data[4]);
+					String textureID = data[5];
+					
+					ModelTexture mt = new ModelTexture(loader.loadTexture(textureID), textureID);
+					mt.setShineDamper(shineDamper);
+					mt.setReflectivity(reflectivity);
+					mt.setHasTransparency(hasTransparency);
+					mt.setUseFakeLighting(useFakeLighting);
+					mt.setNumberOfRows(numberOfRows);
+					
+					TexturedModel tm  = new TexturedModel(OBJFileLoader.loadOBJ(textureID, loader), mt);
+					if (line.startsWith("E:")) {
+						Entity e = new Entity(tm, position, rotX, rotY, rotZ, scale);
+						e.setRemoved(removed);
+						e.setUsesParticles(usesParticles);
+						entities.add(e);
+					} else {
+						Entity e = new Entity(tm, textureIndex, position, rotX, rotY, rotZ, scale);
+						e.setRemoved(removed);
+						e.setUsesParticles(usesParticles);
+						normalMapEntities.add(e);
+					}
+				} else if (line.startsWith("L:")) {
+					
+				}
+			}
+			reader.close();
+		} catch (FileNotFoundException e) {
+			generate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void generate() {
+		ModelTexture fernTextureAtlas = new ModelTexture(loader.loadTexture("fern"), "fern");
+		fernTextureAtlas.setNumberOfRows(2);
+
+		TexturedModel fern = new TexturedModel(OBJFileLoader.loadOBJ("fern", loader),
+				fernTextureAtlas);
+
+		TexturedModel bobble = new TexturedModel(OBJFileLoader.loadOBJ("pine", loader),
+				new ModelTexture(loader.loadTexture("pine"), "pine"));
+		bobble.getTexture().setHasTransparency(true);
+		
+		Random random = new Random(5666778);
+		float waterHeight = water.getHeight();
+		for (int i = 0; i < WORLD_SIZE/8; i++) {
+			if (i % 3 == 0) {
+				float x = (random.nextFloat() * WORLD_SIZE);
+				float z = (random.nextFloat() * WORLD_SIZE);
+				if ((x > 50 && x < 100) || (z < -50 && z > -100)) {
+				} else {
+					float y = terrain.getHeightOfTerrain(x, z);
+					if (y < waterHeight) continue;
+					entities.add(new Entity(fern, 3, new Vector3f(x, y, z), 0,
+							random.nextFloat() * 360, 0, 0.9f));
+				}
+			}
+			if (i % 2 == 0) {
+
+				float x = (random.nextFloat() * WORLD_SIZE);
+				float z = (random.nextFloat() * WORLD_SIZE);
+				if ((x > 50 && x < 100) || (z < -50 && z > -100)) {
+				} else {
+					float y = terrain.getHeightOfTerrain(x, z);
+					if (y < waterHeight) continue;
+					entities.add(new Tree(loader, bobble,new Vector3f(x, y, z), random.nextFloat() * 0.6f + 0.8f));
+				}
+			}
+		}
+		save(entities, normalMapEntities, lights);
+	}
+	
+	public void save(List<Entity> entities, List<Entity> normalEntities, List<Light> lights) {
+		String file = "sector.sec";
+		lights.remove(sun);
+		entities.remove(player);
+		try {
+			PrintWriter writer = new PrintWriter(new File(file));
+			for (Entity e : entities) {
+				writer.println("E:" + e.getData());
+			}
+			for (Entity e : normalEntities) {
+				writer.println("NE:" + e.getData());
+			}
+			for (Light l : lights) {
+				writer.println("L:" + l.getData());
+			}
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+		lights.add(sun);
+		entities.add(player);
 	}
 	
 	public void update(Fbo fbo, Fbo outputFbo) {
-		manager.update();
-		
-		List<Entity> entities = manager.getEntities();
-		List<Entity> normalMapEntities = manager.getNormalMapEntities();
-		List<Light> lights = manager.getLights();
-		
-		text.setText("Sector: " + manager.getCurrSector().getID());
-
 		float xPercent = ((player.getPosition().x / WORLD_SIZE) * 100);
 		float zPercent = ((player.getPosition().z / WORLD_SIZE) * 100);
 		xPercent = (miniMap.getScale().x / 100) * xPercent * 2;
@@ -139,7 +247,6 @@ public class World {
 		camera.move();
 		
 		renderer.renderShadowMap(entities, sun);
-		
 		for (Entity e : entities) {
 			boolean inBounds = false;
 			int boundaries = 500;
@@ -152,13 +259,14 @@ public class World {
 			
 			inBounds = (eX > x0 && eX < x1 && eZ > z0 && eZ < z1);
 			
-			if (!inBounds) {
-				e.remove();
-				continue;
+			if (inBounds) {
+				if (!entitiesToRender.contains(e)) entitiesToRender.add(e);
 			} else {
-				if (e.isRemoved()) e.setRemoved(false);
+				if (entitiesToRender.contains(e)) entitiesToRender.remove(e);
 			}
-			if (e.isUsesParticles() && !e.isRemoved()) {
+		}
+		for (Entity e : entitiesToRender) {
+			if (e.isUsesParticles()) {
 				Vector3f position = e.getPosition();
 				position = new Vector3f(position.x, position.y  + 10, position.z);
 				Entity.system.generateParticles(position, (e instanceof Tree));
@@ -173,7 +281,7 @@ public class World {
 		float distance = 2 * (camera.getPosition().y - water.getHeight());
 		camera.getPosition().y -= distance;
 		camera.invertPitch();
-		renderer.renderScene(entities, normalMapEntities, terrain, lights, camera, new Vector4f(0, 1, 0, -water.getHeight()+1));
+		renderer.renderScene(entitiesToRender, normalMapEntitiesToRender, terrain, lightsToRender, camera, new Vector4f(0, 1, 0, -water.getHeight()+1));
 		camera.getPosition().y += distance;
 		camera.invertPitch();
 		

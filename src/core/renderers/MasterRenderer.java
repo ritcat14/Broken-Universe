@@ -66,7 +66,7 @@ public class MasterRenderer {
 			Camera camera, Vector4f clipPlane) {
 		processTerrain(terrain);
 		for (Entity entity : entities) {
-			if (!entity.isRemoved()) processEntity(entity);
+			processEntity(entity);
 		}
 		for(Entity entity : normalEntities){
 			processNormalMapEntity(entity);
