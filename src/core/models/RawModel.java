@@ -17,7 +17,5 @@ public class RawModel {
 	public int getVertexCount() {
 		return vertexCount;
 	}
-	
-	
 
 }

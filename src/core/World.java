@@ -47,21 +47,18 @@ import core.toolbox.MousePicker;
 
 public class World {
 
-	private final int WORLD_SIZE = 4096;
+	public final static int WORLD_SIZE = 4096;
 	
 	private GUIText text;
 	private FontType font;
 	private GuiRenderer guiRenderer;
 	private GuiTexture playerMarker, miniMap;
 	
-	private List<Entity> entities = new ArrayList<Entity>();
-	private List<Entity> normalMapEntities = new ArrayList<Entity>();
-	private List<Light> lights = new ArrayList<Light>();
 	private List<GuiTexture> guiTextures = new ArrayList<GuiTexture>();
 	
-	private Terrain terrain;
+	public static Terrain terrain;
 	
-	protected WaterTile water;
+	public static WaterTile water;
 	protected WaterRenderer waterRenderer;
 	protected WaterShader waterShader;
 	
@@ -71,14 +68,7 @@ public class World {
 	private MasterRenderer renderer;
 	private FrameBuffers buffers;
 	private Light sun;
-	
-	private int worldSectorWidth = 4;
-	private int worldSectorHeight = 4;
-	private int sectorSize = WORLD_SIZE / 4;
-	
-	private Sector[] sectors;
-	private Sector currSector;
-	private Sector preSector;
+	private SectorManager manager;
 	
 	public World(Loader loader, MasterRenderer renderer, Camera camera, Player player) {
 		this.loader = loader;
@@ -89,17 +79,7 @@ public class World {
 	}
 	
 	private void init() {
-		entities.add(player);
-		
 		buffers = new FrameBuffers();
-		sectors = new Sector[worldSectorWidth * worldSectorHeight];
-		for (int x = 0; x < worldSectorWidth; x++) {
-			for (int y = 0; y < worldSectorHeight; y++) {
-				sectors[x + y * worldSectorWidth] = new Sector(x + y * worldSectorWidth, loader, x * sectorSize, y * sectorSize);
-			}
-		}
-		
-		currSector = sectors[0];
 		
 		// *********TERRAIN TEXTURE STUFF**********
 		
@@ -113,26 +93,25 @@ public class World {
 		TerrainTexture blendMap = new TerrainTexture(loader.loadTexture("blendMap"));
 		
 		terrain = new Terrain(WORLD_SIZE, 0, 0, loader, texturePack, blendMap, "heightMap");
-
 		waterShader = new WaterShader();
 		waterShader.start();
 		waterShader.loadSkyColour(MasterRenderer.RED, MasterRenderer.GREEN, MasterRenderer.BLUE);
 		waterShader.stop();
 		waterRenderer = new WaterRenderer(loader, waterShader, renderer.getProjectionMatrix(), buffers);
-		water = new WaterTile(WORLD_SIZE, WORLD_SIZE, WORLD_SIZE/2, WORLD_SIZE/2, -15);
+		water = new WaterTile(WORLD_SIZE, WORLD_SIZE, WORLD_SIZE/2, WORLD_SIZE/2, -25);
 
 		sun = new Light(new Vector3f(1000000, 1500000, -1000000), new Vector3f(1.3f, 1.3f, 1.3f));
-		lights.add(sun);
+		
+		manager = new SectorManager(player, sun, loader);
+		//manager.changeSector(manager.getSector(player.getPosition().x, player.getPosition().z).getID());
 
 		font = new FontType(loader.loadTexture("candara"), new File("res/candara.fnt"));
-		text = new GUIText("Sector: " + currSector.getID(), 1f, font, new Vector2f(0f, 0f), 1f, false);
+		text = new GUIText("Sector: " + manager.getCurrSector().getID(), 1f, font, new Vector2f(0f, 0f), 1f, false);
 		text.setColour(0, 0, 0);
-		float y = terrain.getHeightOfTerrain(sectorSize, sectorSize);
-		player.setPosition(new Vector3f(sectorSize, y, sectorSize));
 		
 		guiRenderer = new GuiRenderer(loader);
 		
-		Vector2f size = getScaledVector(0.125f);
+		Vector2f size = getScaledVector(0.15f);
 		miniMap = new GuiTexture(loader.loadTexture("miniMap"), new Vector2f(size.x - 1, 1 - size.y), size);
 		guiTextures.add(miniMap);
 		
@@ -142,21 +121,19 @@ public class World {
 	}
 	
 	public void update(Fbo fbo, Fbo outputFbo) {
-		currSector = getSector();
-		if (preSector != null) {
-			if (!currSector.equals(preSector)) {
-				entities.addAll(currSector.getEntities());
-				lights.addAll(currSector.getLights());
-				normalMapEntities.addAll(currSector.getNormalEntities());
-				text.setText("Sector: " + currSector.getID());
-			}
-		}
-		preSector = currSector;
+		manager.update();
+		
+		List<Entity> entities = manager.getEntities();
+		List<Entity> normalMapEntities = manager.getNormalMapEntities();
+		List<Light> lights = manager.getLights();
+		
+		text.setText("Sector: " + manager.getCurrSector().getID());
 
-		float xPercent = ((player.getPosition().x / WORLD_SIZE) * miniMap.getScale().x);
-		float zPercent = ((player.getPosition().z / WORLD_SIZE) * miniMap.getScale().y);
-		playerMarker.setPosition(new Vector2f(- (1 - xPercent), zPercent));
-		System.out.println(playerMarker.getPosition().x + " : " + playerMarker.getPosition().y);
+		float xPercent = ((player.getPosition().x / WORLD_SIZE) * 100);
+		float zPercent = ((player.getPosition().z / WORLD_SIZE) * 100);
+		xPercent = (miniMap.getScale().x / 100) * xPercent * 2;
+		zPercent = (miniMap.getScale().y / 100) * zPercent * 2;
+		playerMarker.setPosition(new Vector2f(xPercent-1, 1-zPercent));
 		
 		player.move(this);
 		camera.move();
@@ -235,18 +212,8 @@ public class World {
 		guiRenderer.cleanUp();
 	}
 	
-	public void add(Entity e) {
-		entities.add(e);
-	}
-	
 	public Terrain getTerrain() {
 		return terrain;
-	}
-	
-	private Sector getSector() {
-		int playerTerrainX = (int) Math.floor(player.getPosition().x / sectorSize); // convert player coordinates to terrain coordinates
-	    int playerTerrainZ = (int) Math.floor(player.getPosition().z / sectorSize) ;
-	    return sectors[playerTerrainX + playerTerrainZ * worldSectorWidth];
 	}
 
 }

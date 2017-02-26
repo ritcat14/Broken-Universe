@@ -21,4 +21,10 @@ public class TexturedModel {
 		return texture;
 	}
 
+	public String getData() {
+		String data = "";
+		data += texture.getData();
+		return data;
+	}
+
 }

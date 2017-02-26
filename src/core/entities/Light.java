@@ -38,6 +38,15 @@ public class Light {
 	public void setColour(Vector3f colour) {
 		this.colour = colour;
 	}
+
+	public String getData() {
+		String data = "";
+		String s = ",";
+		data += position.x + s + position.y + s + position.z + s +
+				colour.x + s + colour.y + s + colour.z + s +
+				attenuation.x + s + attenuation.y + s + attenuation.z;
+		return data;
+	}
 	
 
 }

@@ -44,6 +44,20 @@ public class Entity {
 		this.scale = scale;
 	}
 	
+	public String getData() {
+		String s = ",";
+		String data = "";
+		data += position.x + s + position.y + s + position.z + s;
+		data += rotX + s + rotY + s + rotZ + s + scale + s + removed + s +
+				textureIndex + s + usesParticles + ":";
+		data += model.getData();
+		return data;
+	}
+	
+	public void setUsesParticles(boolean usesParticles) {
+		this.usesParticles = usesParticles;
+	}
+	
 	public void remove() {
 		removed = true;
 	}

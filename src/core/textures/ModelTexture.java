@@ -12,9 +12,15 @@ public class ModelTexture {
 	private boolean useFakeLighting = false;
 	
 	private int numberOfRows = 1;
+	private String textureFile;
 	
-	public ModelTexture(int texture){
+	public ModelTexture(int texture, String textureLocation){
 		this.textureID = texture;
+		this.textureFile = textureLocation;
+	}
+	
+	public String getTextureFile() {
+		return textureFile;
 	}
 		
 	public int getNumberOfRows() {
@@ -69,6 +75,15 @@ public class ModelTexture {
 
 	public void setReflectivity(float reflectivity) {
 		this.reflectivity = reflectivity;
+	}
+
+	public String getData() {
+		String data = "";
+		String s = ",";
+		data += shineDamper + s + 
+				reflectivity + s + hasTransparency + s + 
+				useFakeLighting + s + numberOfRows + s + textureFile;
+		return data;
 	}
 
 }

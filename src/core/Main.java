@@ -1,47 +1,27 @@
 package core;
 
-import java.awt.Toolkit;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.util.vector.Vector2f;
 import org.lwjgl.util.vector.Vector3f;
-import org.lwjgl.util.vector.Vector4f;
 
 import core.entities.*;
 import core.entities.world.Tree;
 import core.fontMeshCreator.FontType;
 import core.fontMeshCreator.GUIText;
 import core.loaders.Loader;
-import core.loaders.NormalMappedObjLoader;
-import core.loaders.OBJFileLoader;
 import core.loaders.OBJLoader;
 import core.masters.ParticleMaster;
-import core.masters.ParticleSystem;
 import core.masters.PostProcessing;
 import core.masters.TextMaster;
 import core.modelData.Fbo;
-import core.modelData.FrameBuffers;
 import core.models.RawModel;
 import core.models.TexturedModel;
-import core.renderers.GuiRenderer;
 import core.renderers.MasterRenderer;
-import core.renderers.WaterRenderer;
-import core.shaders.WaterShader;
-import core.terrains.Terrain;
-import core.textures.GuiTexture;
 import core.textures.ModelTexture;
-import core.textures.ParticleTexture;
-import core.textures.TerrainTexture;
-import core.textures.TerrainTexturePack;
-import core.toolbox.MousePicker;
 
 public class Main {
 
@@ -56,7 +36,7 @@ public class Main {
 
 		RawModel bunnyModel = OBJLoader.loadObjModel("person", loader);
 		TexturedModel stanfordBunny = new TexturedModel(bunnyModel, new ModelTexture(
-				loader.loadTexture("playerTexture")));
+				loader.loadTexture("playerTexture"), "playerTexture"));
 
 		Player player = new Player(stanfordBunny, new Vector3f(0, 0, 0), 0, 0, 0, 0.6f);
 		Camera camera = new Camera(player);
