@@ -241,10 +241,14 @@ public class World {
 		xPercent = (miniMap.getScale().x / 100) * xPercent * 2;
 		zPercent = (miniMap.getScale().y / 100) * zPercent * 2;
 		playerMarker.setPosition(new Vector2f(xPercent-1, 1-zPercent));
-		
+		List<Entity> entitiesToRemove = new ArrayList<Entity>();
 		renderer.renderShadowMap(entities, sun);
 		for (Entity e : entities) {
 			if (e instanceof Player) continue;
+			if (e.isRemoved()) {
+				entitiesToRemove.add(e);
+				continue;
+			}
 			boolean inBounds = false;
 			int boundaries = 500;
 			int x0 = (int) (player.getPosition().x - boundaries);
@@ -262,6 +266,7 @@ public class World {
 				if (entitiesToRender.contains(e)) entitiesToRender.remove(e);
 			}
 		}
+		entities.removeAll(entitiesToRemove);
 		for (Entity e : entitiesToRender) {
 			if (e.isUsesParticles()) {
 				Vector3f position = e.getPosition();

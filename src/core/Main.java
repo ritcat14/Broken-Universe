@@ -67,6 +67,7 @@ public class Main {
 		//**************Save*******************
 		world.save();
 		while(!world.saved) world.saved = world.fileLoader.isDataWritten();
+		world.fileLoader.stop();
 
 		//*********Clean Up Below**************
 		
@@ -74,8 +75,13 @@ public class Main {
 		multisampleFbo.cleanUp();
 		ParticleMaster.cleanUp();
 		TextMaster.cleanUp();
+		world.cleanUp();
 		DisplayManager.closeDisplay();
+		System.exit(-1);
 	}
 
-
+	public synchronized static void print(String string) {
+		System.out.println(string);
+	}
+	
 }

@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import core.Main;
+
 public class FileLoader implements Runnable {
 	
 	private Thread t;
@@ -96,9 +98,12 @@ public class FileLoader implements Runnable {
 	
 	private boolean write() {
 		try {
+			int i = 0;
 			PrintWriter writer = new PrintWriter(new FileWriter(file));
 			for (String s : dataToWrite) {
 				writer.println(s);
+				Main.print(i + ":" + s);
+				i++;
 			}
 			writer.close();
 			return true;
@@ -106,7 +111,6 @@ public class FileLoader implements Runnable {
 			e.printStackTrace();
 			return false;
 		}
-		
 	}
 	
 	@Override
@@ -117,6 +121,7 @@ public class FileLoader implements Runnable {
 				readWrite = -1;
 				dataRead = true;
 			} else if (readWrite == 1) { //Write data
+				Main.print("Writing data");
 				writeSuccess = write();
 				readWrite = -1;
 				dataWritten = true;
