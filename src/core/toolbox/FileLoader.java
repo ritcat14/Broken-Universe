@@ -8,62 +8,42 @@ import java.io.PrintWriter;
 
 import core.Main;
 
-public class FileLoader implements Runnable {
+public class FileLoader {
 	
-	private Thread t;
 	private String file;
-	private boolean running = false;
-	private int readWrite = -1;//read = 0, write = 1
 	private String[] data = new String[0];
 	private String[] dataToWrite = new String[0];
 	private boolean writeSuccess = false;
 	private boolean dataWritten = false;
 	private boolean dataRead = false;
 	
-	public FileLoader() {
-		start();
-	}
-	
-	public synchronized String[] getData() {
+	public String[] getData() {
 		dataRead = false;
 		return data;
 	}
 	
-	public synchronized boolean isDataRead() {
+	public boolean isDataRead() {
 		return dataRead;
 	}
 	
-	public synchronized boolean isDataWritten() {
+	public boolean isDataWritten() {
 		return dataWritten;
 	}
 	
-	public synchronized void start() {
-		t = new Thread(this, "FileHandler");
-		t.start();
-		running = true;
-	}
-	
-	public synchronized void stop() {
-		try {
-			t.join();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		running = false;
-	}
-	
 	public void writeData(String file, String[] data) {
-		readWrite = 1;
 		this.file = file;
 		this.dataToWrite = data;
+		writeSuccess = write();
+		dataWritten = true;
 	}
 	
 	public void readData(String file) {
-		readWrite = 0;
 		this.file = file;
+		this.data = read();
+		dataRead = true;
 	}
 	
-	private int getLineNum() {
+	public int getLineNum() {
 		int lineNum = 0;
 		BufferedReader reader;
 		try {
@@ -98,34 +78,15 @@ public class FileLoader implements Runnable {
 	
 	private boolean write() {
 		try {
-			int i = 0;
 			PrintWriter writer = new PrintWriter(new FileWriter(file));
 			for (String s : dataToWrite) {
 				writer.println(s);
-				Main.print(i + ":" + s);
-				i++;
 			}
 			writer.close();
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
-		}
-	}
-	
-	@Override
-	public void run() {
-		while (running) {
-			if (readWrite == 0) { // Read data
-				this.data = read();
-				readWrite = -1;
-				dataRead = true;
-			} else if (readWrite == 1) { //Write data
-				Main.print("Writing data");
-				writeSuccess = write();
-				readWrite = -1;
-				dataWritten = true;
-			}
 		}
 	}
 

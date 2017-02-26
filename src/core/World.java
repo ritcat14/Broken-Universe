@@ -2,7 +2,6 @@ package core;
 
 import java.awt.Toolkit;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import org.lwjgl.opengl.GL11;
@@ -40,19 +39,19 @@ public class World {
 	public final static int WORLD_SIZE = 4096;
 	
 	public FileLoader fileLoader;
-	public boolean saved = false;
+	public boolean loaded = false;
 	
 	private GuiRenderer guiRenderer;
 	private GuiTexture playerMarker, miniMap;
 	
-	private List<GuiTexture> guiTextures = new ArrayList<GuiTexture>();
-	private List<Entity> entities = new ArrayList<Entity>();
-	private List<Entity> normalMapEntities = new ArrayList<Entity>();
-	private List<Light> lights = new ArrayList<Light>();
+	private ArrayList<GuiTexture> guiTextures = new ArrayList<GuiTexture>();
+	private ArrayList<Entity> entities = new ArrayList<Entity>();
+	private ArrayList<Entity> normalMapEntities = new ArrayList<Entity>();
+	private ArrayList<Light> lights = new ArrayList<Light>();
 	
-	private List<Entity> entitiesToRender = new ArrayList<Entity>();
-	private List<Entity> normalMapEntitiesToRender = new ArrayList<Entity>();
-	private List<Light> lightsToRender = new ArrayList<Light>();
+	private ArrayList<Entity> entitiesToRender = new ArrayList<Entity>();
+	private ArrayList<Entity> normalMapEntitiesToRender = new ArrayList<Entity>();
+	private ArrayList<Light> lightsToRender = new ArrayList<Light>();
 	
 	private Terrain terrain;
 	
@@ -97,6 +96,8 @@ public class World {
 		waterShader.stop();
 		waterRenderer = new WaterRenderer(loader, waterShader, renderer.getProjectionMatrix(), buffers);
 		water = new WaterTile(WORLD_SIZE, WORLD_SIZE, WORLD_SIZE/2, WORLD_SIZE/2, -25);
+		
+		//generate();
 
 		sun = new Light(new Vector3f(1000000, 1500000, -1000000), new Vector3f(1.3f, 1.3f, 1.3f));
 		
@@ -112,20 +113,17 @@ public class World {
 
 		entitiesToRender.add(player);
 		lightsToRender.add(sun);
-		generate();
-		//fileLoader.readData("sector.sec");
 	}
 	
 	private void loadData() {
-		String file = "sector.sec";
-		fileLoader.readData(file);
+		fileLoader.readData("sector.sec");
 		String[] fileData = fileLoader.getData();
+		int max = fileLoader.getLineNum() - 1;
 		try {
 			for (String line : fileData) {
-				String[] parts;
+				String[] parts = line.split(":");
 				if (line.startsWith("E:") || line.startsWith("NE:")) {
-					parts = line.split(":");
-					String[] data = parts[1].split(",");
+					String[] data = parts[2].split(",");
 					Vector3f position = new Vector3f(Float.parseFloat(data[0]), Float.parseFloat(data[1]), Float.parseFloat(data[2]));
 					float rotX = Float.parseFloat(data[3]);
 					float rotY = Float.parseFloat(data[4]);
@@ -135,7 +133,7 @@ public class World {
 					int textureIndex = Integer.parseInt(data[8]);
 					boolean usesParticles = Boolean.parseBoolean(data[9]);
 					
-					data = parts[2].split(",");
+					data = parts[3].split(",");
 					float shineDamper = Float.parseFloat(data[0]);
 					float reflectivity = Float.parseFloat(data[1]);
 					boolean hasTransparency = Boolean.parseBoolean(data[2]);
@@ -156,6 +154,7 @@ public class World {
 						e.setRemoved(removed);
 						e.setUsesParticles(usesParticles);
 						entities.add(e);
+						System.out.println(entities.size() + "/" + max);
 					} else {
 						Entity e = new Entity(tm, textureIndex, position, rotX, rotY, rotZ, scale);
 						e.setRemoved(removed);
@@ -164,6 +163,18 @@ public class World {
 					}
 				} else if (line.startsWith("L:")) {
 					
+				} else if (line.startsWith("P:")) {
+					String[] data = parts[2].split(",");
+					Vector3f position = new Vector3f(Float.parseFloat(data[0]), Float.parseFloat(data[1]), Float.parseFloat(data[2]));
+					float rotX = Float.parseFloat(data[3]);
+					float rotY = Float.parseFloat(data[4]);
+					float rotZ = Float.parseFloat(data[5]);
+					float scale = Float.parseFloat(data[6]);
+					player.setPosition(position);
+					player.setRotX(rotX);
+					player.setRotY(rotY);
+					player.setRotZ(rotZ);
+					player.setScale(scale);
 				}
 			}
 		} catch (Exception e) {
@@ -211,10 +222,10 @@ public class World {
 	}
 	
 	public void save() {
-		String[] data = new String[entities.size() + normalMapEntities.size() + lights.size()];
+		String[] data = new String[entities.size() + normalMapEntities.size() + lights.size() + 1];
 		int index = 0;
 		for (Entity e : entities) {
-			data[index] = "E:" + e.getData();
+			data[index] = "E:" + index + ":" + e.getData();
 			index++;
 		}
 		for (Entity e : normalMapEntities) {
@@ -225,14 +236,11 @@ public class World {
 			data[index] = l.getData();
 			index++;
 		}
+		data[index] = "P:" + player.getData();
 		fileLoader.writeData("sector.sec", data);
 	}
 	
 	public void update(Fbo fbo, Fbo outputFbo) {
-		if (fileLoader.isDataRead()) {
-			loadData();
-		}
-		
 		player.move(this);
 		camera.move();
 		
@@ -241,7 +249,7 @@ public class World {
 		xPercent = (miniMap.getScale().x / 100) * xPercent * 2;
 		zPercent = (miniMap.getScale().y / 100) * zPercent * 2;
 		playerMarker.setPosition(new Vector2f(xPercent-1, 1-zPercent));
-		List<Entity> entitiesToRemove = new ArrayList<Entity>();
+		ArrayList<Entity> entitiesToRemove = new ArrayList<Entity>();
 		renderer.renderShadowMap(entities, sun);
 		for (Entity e : entities) {
 			if (e instanceof Player) continue;
@@ -304,6 +312,12 @@ public class World {
 		PostProcessing.doPostProcessing(outputFbo.getColourTexture());
 		
 		guiRenderer.render(guiTextures);
+		
+
+		if (!loaded) {
+			loadData();
+			loaded = true;
+		}
 	}
 	
 	private Vector2f getScaledVector(float width) {

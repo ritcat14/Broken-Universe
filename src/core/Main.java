@@ -42,13 +42,13 @@ public class Main {
 		Camera camera = new Camera(player);
 		
 		MasterRenderer renderer = new MasterRenderer(loader, camera);
+		
+		World world = new World(loader, renderer, camera, player);
+		
 		ParticleMaster.init(loader, renderer.getProjectionMatrix());
 		FontType font = new FontType(loader.loadTexture("candara"), new File("res/candara.fnt"));
 		GUIText text = new GUIText("Broken Universe", 3f, font, new Vector2f(0f, 0f), 1f, true);
 		text.setColour(0, 0, 0);
-		
-		World world = new World(loader, renderer, camera, player);
-		
 		
 		Fbo multisampleFbo = new Fbo(Display.getWidth(), Display.getHeight());
 		Fbo outputFbo = new Fbo(Display.getWidth(), Display.getHeight(), Fbo.DEPTH_TEXTURE);
@@ -66,8 +66,6 @@ public class Main {
 		
 		//**************Save*******************
 		world.save();
-		while(!world.saved) world.saved = world.fileLoader.isDataWritten();
-		world.fileLoader.stop();
 
 		//*********Clean Up Below**************
 		

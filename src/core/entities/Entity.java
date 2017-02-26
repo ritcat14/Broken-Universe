@@ -47,6 +47,13 @@ public class Entity {
 	public String getData() {
 		String s = ",";
 		String data = "";
+		if (position.x == -0) position.x = 0;
+		if (position.y == -0) position.y = 0;
+		if (position.z == -0) position.z = 0;
+		if (scale == -0) scale = 0;
+		if (rotX == -0) rotX = 0;
+		if (rotY == -0) rotY = 0;
+		if (rotZ == -0) rotZ = 0;
 		data += position.x + s + position.y + s + position.z + s;
 		data += rotX + s + rotY + s + rotZ + s + scale + s + removed + s +
 				textureIndex + s + usesParticles + ":";
